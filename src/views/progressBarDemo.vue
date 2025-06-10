@@ -63,17 +63,17 @@ const showStatusIcon = ref(true);
         <h3>Статус</h3>
         <div class="example-row">
           <div class="example">
-            <h4>Статус "Предупреждение"</h4>
+            <h4>"Предупреждение"</h4>
             <progressBar status="warning"/>
           </div>
 
           <div class="example">
-            <h4>Статус "Ошибка"</h4>
+            <h4>"Ошибка"</h4>
             <progressBar status="error"/>
           </div>
 
           <div class="example">
-            <h4>Статус "Успех"</h4>
+            <h4>"Успех"</h4>
             <progressBar status="success"/>
           </div>
         </div>
@@ -82,24 +82,24 @@ const showStatusIcon = ref(true);
         <h3>Тип</h3>
         <div class="example-row">
           <div class="example">
-            <h4>Тип Dashboard</h4>
+            <h4>Dashboard</h4>
             <progressBar :value="50" type="dashboard"/>
           </div>
         </div>
         <h3>Статус</h3>
         <div class="example-row">
           <div class="example">
-            <h4>Статус "Предупреждение"</h4>
+            <h4>"Предупреждение"</h4>
             <progressBar :value="50" type="dashboard" status="warning"/>
           </div>
 
           <div class="example">
-            <h4>Статус "Ошибка"</h4>
+            <h4>"Ошибка"</h4>
             <progressBar :value="50" type="dashboard" status="error"/>
           </div>
 
           <div class="example">
-            <h4>Статус "Успех"</h4>
+            <h4>"Успех"</h4>
             <progressBar :value="50" type="dashboard" status="success"/>
           </div>
         </div>
