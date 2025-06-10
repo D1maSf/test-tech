@@ -38,12 +38,13 @@
           <div class="form-group">
             <label for="color">Цвет</label>
             <ColorPicker
-                :v-model:pureColor="form.color"
+                v-model:pureColor="form.color"
                 format="hex"
                 pickerType="chrome"
                 :disableHistory="true"
                 :disableAlpha="true"
             />
+            <p>Выбранный цвет: {{ form.color }}</p>
           </div>
 
           <button type="submit" class="submit-btn">
@@ -123,11 +124,16 @@ const chartOptions = {
     animateRotate: true
   },
   plugins: {
-    legend: {
-      position: 'right',
-      padding: 10,
-      labels: {
-        padding: 10
+    tooltip: {
+      callbacks: {
+        label(context) {
+          const data = context.dataset.data;
+          const value = data[context.dataIndex];
+          const sum = data.reduce((a, b) => a + b, 0);
+          const percentage = sum ? ((value / sum) * 100).toFixed(2) : 0;
+          const label = context.label || '';
+          return `${label}: ${value} (${percentage}%)`;
+        }
       }
     }
   }
@@ -150,21 +156,30 @@ onMounted(() => {
 
 const initChart = () => {
   if (chartInstance.value) {
-    console.log('[initChart] Destroying previous chart instance');
     chartInstance.value.destroy();
   }
 
   if (chartCanvas.value) {
-    const data = pieData.value;
-    console.log('[initChart] Creating chart with data:', JSON.stringify(data));
+    const data = { ...pieData.value };
+    const sum = data.datasets[0].data.reduce((a, b) => a + b, 0);
+
+    const labels = [...data.labels];
+    const datasetData = [...data.datasets[0].data];
+    const backgroundColor = [...data.datasets[0].backgroundColor];
+
+    if (sum < 100) {
+      labels.push('Пусто');
+      datasetData.push(100 - sum);
+      backgroundColor.push('#e0e0e0'); // серый для пустой части
+    }
 
     chartInstance.value = new Chart(chartCanvas.value, {
       type: 'pie',
       data: {
-        labels: data.labels ?? [],
+        labels,
         datasets: [{
-          data: data.datasets?.[0]?.data ?? [],
-          backgroundColor: data.datasets?.[0]?.backgroundColor ?? []
+          data: datasetData,
+          backgroundColor
         }]
       },
       options: chartOptions
@@ -177,7 +192,6 @@ let previousDataLength = 0;
 const updateChart = () => {
   if (!chartInstance.value) {
     initChart();
-    previousDataLength = pieData.value.labels.length;
     return;
   }
 
@@ -185,44 +199,55 @@ const updateChart = () => {
 
   if (!datasets || datasets.length === 0 || !datasets[0]) {
     initChart();
-    previousDataLength = labels.length;
     return;
   }
 
-  const currentLength = labels.length;
+  const sum = datasets[0].data.reduce((a, b) => a + b, 0);
+  const newLabels = [...labels];
+  const newData = [...datasets[0].data];
+  const newColors = [...datasets[0].backgroundColor];
+
+  if (sum < 100) {
+    newLabels.push('Пусто');
+    newData.push(100 - sum);
+    newColors.push('#e0e0e0');
+  }
 
   try {
-    if (currentLength > previousDataLength) {
-      // если добавили новых элементов — пересоздаем график
-      chartInstance.value.destroy();
-      initChart();
-    } else {
-      // иначе обновляем данные "на лету"
-      chartInstance.value.data.labels = [...labels];
-      chartInstance.value.data.datasets[0].data = [...datasets[0].data];
-      chartInstance.value.data.datasets[0].backgroundColor = [...datasets[0].backgroundColor];
-      chartInstance.value.update();
-    }
-    previousDataLength = currentLength;
+    chartInstance.value.data.labels = newLabels;
+    chartInstance.value.data.datasets[0].data = newData;
+    chartInstance.value.data.datasets[0].backgroundColor = newColors;
+    chartInstance.value.update();
   } catch (e) {
-    console.error('[updateChart] Error updating chart, reinitializing', e);
     chartInstance.value.destroy();
     initChart();
-    previousDataLength = currentLength;
   }
 };
 
 const handleSubmit = () => {
-  console.log('[handleSubmit] form data:', { ...form.value });
+  const newValue = Number(form.value.value);
+  const currentData = [...pieData.value.datasets[0].data];
+  const total = currentData.reduce((a, b) => a + b, 0);
+
   if (editingIndex.value === null) {
+    if (total + newValue > 100) {
+      alert('Сумма значений не может превышать 100%');
+      return;
+    }
     store.dispatch('addData', { ...form.value });
   } else {
+    const oldValue = currentData[editingIndex.value];
+    if (total - oldValue + newValue > 100) {
+      alert('Сумма значений не может превышать 100%');
+      return;
+    }
     store.dispatch('updateData', {
       index: editingIndex.value,
       data: { ...form.value }
     });
     editingIndex.value = null;
   }
+
   resetForm();
 };
 
