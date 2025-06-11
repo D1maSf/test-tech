@@ -1,10 +1,5 @@
 <script setup>
-import progressBar from './components/progressBar.vue'
 
-import { ref } from 'vue'
-
-const progress = ref(40)
-const status = ref('in-progress')
 </script>
 
 <template>

@@ -1,90 +1,3 @@
-<template>
-  <div class="pie-chart-page">
-    <h1 class="page-title">Круговая диаграмма (Vuex)</h1>
-
-    <div class="chart-container">
-      <div class="chart-wrapper">
-        <canvas ref="chartCanvas"></canvas>
-      </div>
-
-      <div class="form-container">
-        <h2 class="form-title">Добавить данные</h2>
-        <form @submit.prevent="handleSubmit" class="data-form">
-          <div class="form-group">
-            <label for="label">Наименование</label>
-            <input
-                id="label"
-                v-model="form.label"
-                type="text"
-                required
-                class="form-input"
-                placeholder="Введите название"
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="value">Значение</label>
-            <input
-                id="value"
-                v-model.number="form.value"
-                type="number"
-                required
-                min="1"
-                class="form-input"
-                placeholder="Введите значение"
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="color">Цвет</label>
-            <ColorPicker
-                v-model:pureColor="form.color"
-                format="hex"
-                pickerType="chrome"
-                :disableHistory="true"
-                :disableAlpha="true"
-            />
-            <p>Выбранный цвет: {{ form.color }}</p>
-          </div>
-
-          <button type="submit" class="submit-btn">
-            {{ editingIndex === null ? 'Добавить' : 'Обновить' }}
-          </button>
-          <button
-              v-if="editingIndex !== null"
-              type="button"
-              @click="cancelEdit"
-              class="cancel-btn"
-          >
-            Отмена
-          </button>
-        </form>
-      </div>
-    </div>
-
-    <div v-if="dataCount > 0" class="data-list">
-      <h2 class="list-title">Список данных</h2>
-      <ul>
-        <li v-for="(item, index) in pieData.labels" :key="index" class="data-item">
-          <div class="item-info">
-            <span class="item-color" :style="{ backgroundColor: pieData.datasets[0].backgroundColor[index] }"></span>
-            <span class="item-label">{{ item }}</span>
-            <span class="item-value">{{ pieData.datasets[0].data[index] }}</span>
-          </div>
-          <div class="item-actions">
-            <button @click="editItem(index)" class="edit-btn">✏️</button>
-            <button @click="removeItem(index)" class="remove-btn">🗑️</button>
-          </div>
-        </li>
-      </ul>
-    </div>
-
-    <div v-else class="empty-state">
-      <p>Данные для диаграммы отсутствуют. Добавьте их через форму выше.</p>
-    </div>
-  </div>
-</template>
-
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { useStore } from 'vuex';
@@ -287,6 +200,95 @@ const resetForm = () => {
   form.value.color = '#3e95cd';
 };
 </script>
+
+<template>
+  <div class="pie-chart-page">
+    <h1 class="page-title">Круговая диаграмма (Vuex)</h1>
+
+    <div class="chart-container">
+      <div class="chart-wrapper">
+        <canvas ref="chartCanvas"></canvas>
+      </div>
+
+      <div class="form-container">
+        <h2 class="form-title">Добавить данные</h2>
+        <form @submit.prevent="handleSubmit" class="data-form">
+          <div class="form-group">
+            <label for="label">Наименование</label>
+            <input
+                id="label"
+                v-model="form.label"
+                type="text"
+                required
+                class="form-input"
+                placeholder="Введите название"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="value">Значение</label>
+            <input
+                id="value"
+                v-model.number="form.value"
+                type="number"
+                required
+                min="1"
+                class="form-input"
+                placeholder="Введите значение"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="color">Цвет</label>
+            <ColorPicker
+                v-model:pureColor="form.color"
+                format="hex"
+                pickerType="chrome"
+                :disableHistory="true"
+                :disableAlpha="true"
+            />
+            <p>Выбранный цвет: {{ form.color }}</p>
+          </div>
+
+          <button type="submit" class="submit-btn">
+            {{ editingIndex === null ? 'Добавить' : 'Обновить' }}
+          </button>
+          <button
+              v-if="editingIndex !== null"
+              type="button"
+              @click="cancelEdit"
+              class="cancel-btn"
+          >
+            Отмена
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div v-if="dataCount > 0" class="data-list">
+      <h2 class="list-title">Список данных</h2>
+      <ul>
+        <li v-for="(item, index) in pieData.labels" :key="index" class="data-item">
+          <div class="item-info">
+            <span class="item-color" :style="{ backgroundColor: pieData.datasets[0].backgroundColor[index] }"></span>
+            <span class="item-label">{{ item }}</span>
+            <span class="item-value">{{ pieData.datasets[0].data[index] }}</span>
+          </div>
+          <div class="item-actions">
+            <button @click="editItem(index)" class="edit-btn">✏️</button>
+            <button @click="removeItem(index)" class="remove-btn">🗑️</button>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <div v-else class="empty-state">
+      <p>Данные для диаграммы отсутствуют. Добавьте их через форму выше.</p>
+    </div>
+  </div>
+
+
+</template>
 
 <style scoped>
 .pie-chart-page {
