@@ -1,29 +1,40 @@
 <script setup>
-import {ref} from "vue";
-import progressBar from '../components/progressBar.vue'
+import { ref, watch } from 'vue'
+import progressBar from './progressBar.vue'
 
-const progress = ref({
+const props = defineProps({
+  storageKey: {
+    type: String,
+    required: true
+  }
+})
+
+const saved = localStorage.getItem(props.storageKey)
+const settings = ref(saved ? JSON.parse(saved) : {
   progressValue: 0,
-  value: 0,
   status: 'in-progress',
   type: 'default',
   size: 300,
   showText: true,
   showStatusIcon: true
-});
+})
+
+watch(settings, (newVal) => {
+  localStorage.setItem(props.storageKey, JSON.stringify(newVal))
+}, { deep: true })
+
 </script>
 
 <template>
-
   <div class="controls">
     <div class="control-group">
-      <label>Значение: {{ progress.progressValue }}%</label>
-      <input type="range" v-model.number="progress.progressValue" min="0" max="100">
+      <label>Значение: {{ settings.progressValue }}%</label>
+      <input type="range" v-model.number="settings.progressValue" min="0" max="100">
     </div>
 
     <div class="control-group">
       <label>Статус:</label>
-      <select v-model="progress.status">
+      <select v-model="settings.status">
         <option value="in-progress">В процессе</option>
         <option value="success">Успех</option>
         <option value="warning">Предупреждение</option>
@@ -33,7 +44,7 @@ const progress = ref({
 
     <div class="control-group">
       <label>Тип:</label>
-      <select v-model="progress.type">
+      <select v-model="settings.type">
         <option value="default">Полный круг</option>
         <option value="dashboard">Dashboard (с зазором)</option>
       </select>
@@ -42,16 +53,15 @@ const progress = ref({
 
   <div class="progress-container">
     <progressBar
-        :value="progress.progressValue"
-        :size="progress.size"
-        :status="progress.status"
-        :type="progress.type"
-        :show-text="progress.showText"
-        :show-status-icon="progress.showStatusIcon"
+        :value="settings.progressValue"
+        :status="settings.status"
+        :type="settings.type"
+        :size="settings.size"
+        :show-text="settings.showText"
+        :show-status-icon="settings.showStatusIcon"
     />
   </div>
 </template>
 
 <style scoped>
-
 </style>

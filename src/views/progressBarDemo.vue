@@ -1,10 +1,18 @@
 <script setup>
-import progressBarSetting from '../components/progressBarSetting.vue'
+import progressBarSetting from '../components/progressBar/progressBarSetting.vue'
 </script>
 
 <template>
+    
   <div class="container">
+    <router-link
+        to="/"
+        class="btn btn--default"
+    >
+      <span>Home</span>
+    </router-link>
     <h1>Демонстрация кругового прогресс-бара</h1>
+
     <progressBarSetting storageKey="bar" />
     <progressBarSetting storageKey="bar1" />
   </div>

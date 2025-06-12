@@ -202,8 +202,8 @@ const resetForm = () => {
 </script>
 
 <template>
-  <div class="pie-chart-page">
-    <h1 class="page-title">Круговая диаграмма (Vuex)</h1>
+  <div class="pie-chart">
+
 
     <div class="chart-container">
       <div class="chart-wrapper">
@@ -290,13 +290,7 @@ const resetForm = () => {
 
 </template>
 
-<style scoped>
-.pie-chart-page {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
+<style>
 .page-title {
   text-align: center;
   margin-bottom: 30px;
