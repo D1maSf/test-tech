@@ -1,8 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
 const Home = () => import ('../views/home.vue');
-const PieChartPage = () => import ('../views/pieChart.vue');
-const ProgressBarDemo = () => import('../views/progressBarDemo.vue');
+const PieChartPage = () => import ('../views/pieChartDemo.vue');
+const ProgressBarPage = () => import('../views/progressBarDemo.vue');
 
 const routes = [
     {
@@ -13,7 +13,7 @@ const routes = [
     {
         path: '/progressBarDemo',
         name: 'progressBarDemo',
-        component: ProgressBarDemo
+        component: ProgressBarPage
     },
     {
         path: '/pieChart',
