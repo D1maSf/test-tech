@@ -1,8 +1,8 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
-import { useStore } from 'vuex';
-import { Chart, PieController, ArcElement, Tooltip, Legend } from 'chart.js';
-import { ColorPicker } from 'vue3-colorpicker';
+import {ref, onMounted, computed} from 'vue';
+import {useStore} from 'vuex';
+import {Chart, PieController, ArcElement, Tooltip, Legend} from 'chart.js';
+import {ColorPicker} from 'vue3-colorpicker';
 import 'vue3-colorpicker/style.css';
 
 Chart.register(PieController, ArcElement, Tooltip, Legend);
@@ -11,6 +11,7 @@ const store = useStore();
 const chartCanvas = ref(null);
 const chartInstance = ref(null);
 const editingIndex = ref(null);
+const showModal = ref(false);
 
 const form = ref({
   label: '',
@@ -73,7 +74,7 @@ const initChart = () => {
   }
 
   if (chartCanvas.value) {
-    const data = { ...pieData.value };
+    const data = {...pieData.value};
     const sum = data.datasets[0].data.reduce((a, b) => a + b, 0);
 
     const labels = [...data.labels];
@@ -108,7 +109,7 @@ const updateChart = () => {
     return;
   }
 
-  const { labels, datasets } = pieData.value;
+  const {labels, datasets} = pieData.value;
 
   if (!datasets || datasets.length === 0 || !datasets[0]) {
     initChart();
@@ -137,7 +138,7 @@ const updateChart = () => {
   }
 };
 
-const handleSubmit = () => {
+const handleSubmit = async () => {
   const newValue = Number(form.value.value);
   const currentData = [...pieData.value.datasets[0].data];
   const total = currentData.reduce((a, b) => a + b, 0);
@@ -147,36 +148,54 @@ const handleSubmit = () => {
       alert('Сумма значений не может превышать 100%');
       return;
     }
-    store.dispatch('addData', { ...form.value });
+    await store.dispatch('addData', {...form.value});
   } else {
     const oldValue = currentData[editingIndex.value];
     if (total - oldValue + newValue > 100) {
       alert('Сумма значений не может превышать 100%');
       return;
     }
-    store.dispatch('updateData', {
+    await store.dispatch('updateData', {
       index: editingIndex.value,
-      data: { ...form.value }
+      data: {...form.value}
     });
     editingIndex.value = null;
   }
 
   resetForm();
+  closeModal();
 };
 
 const editItem = (index) => {
   const dataset = pieData.value.datasets[0];
-  if (!dataset) {
-    console.log('[editItem] Dataset undefined for index:', index);
-    return;
-  }
+  if (!dataset) return;
 
   form.value.label = pieData.value.labels[index];
   form.value.value = dataset.data[index];
   form.value.color = dataset.backgroundColor[index];
   editingIndex.value = index;
 
-  console.log('[editItem] Editing index:', index, 'form:', { ...form.value });
+  openModal();
+};
+
+const openModal = () => {
+  showModal.value = true;
+  document.body.style.overflow = 'hidden';
+};
+
+const closeModal = () => {
+  showModal.value = false;
+  editingIndex.value = null;
+  resetForm();
+  document.body.style.overflow = '';
+};
+
+const resetForm = () => {
+  form.value = {
+    label: '',
+    value: 1,
+    color: '#3e95cd'
+  };
 };
 
 const removeItem = (index) => {
@@ -192,105 +211,81 @@ const cancelEdit = () => {
   editingIndex.value = null;
   resetForm();
 };
-
-const resetForm = () => {
-  console.log('[resetForm] Resetting form');
-  form.value.label = '';
-  form.value.value = 1;
-  form.value.color = '#3e95cd';
-};
 </script>
 
 <template>
   <div class="pie-chart">
-
-
-    <div class="chart-container">
-      <div class="chart-wrapper">
-        <canvas ref="chartCanvas"></canvas>
+    <div class="data-controls">
+      <div class="data-list">
+        <h2 class="list-title">Список данных</h2>
+        <ul>
+          <li v-for="(item, index) in pieData.labels" :key="index" class="data-item">
+            <div class="item-info">
+              <span class="item-color" :style="{ backgroundColor: pieData.datasets[0].backgroundColor[index] }"></span>
+              <span class="item-label">{{ item }}</span>
+              <span class="item-value">{{ pieData.datasets[0].data[index] }}</span>
+            </div>
+            <div class="item-actions">
+              <button @click="editItem(index)" class="edit-btn">✏️</button>
+              <button @click="removeItem(index)" class="remove-btn">🗑️</button>
+            </div>
+          </li>
+        </ul>
       </div>
+      <button @click="openModal" class="add-btn">Добавить данные</button>
+    </div>
+    <div class="chart-container">
+      <canvas ref="chartCanvas"></canvas>
+    </div>
 
-      <div class="form-container">
-        <h2 class="form-title">Добавить данные</h2>
+
+    <!-- Модальное окно -->
+    <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
+      <div class="modal-content">
+        <h3>{{ editingIndex === null ? 'Добавить данные' : 'Редактировать данные' }}</h3>
         <form @submit.prevent="handleSubmit" class="data-form">
           <div class="form-group">
-            <label for="label">Наименование</label>
-            <input
-                id="label"
-                v-model="form.label"
-                type="text"
-                required
-                class="form-input"
-                placeholder="Введите название"
-            />
+            <label>Название:</label>
+            <input v-model="form.label" type="text" required/>
           </div>
 
           <div class="form-group">
-            <label for="value">Значение</label>
-            <input
-                id="value"
-                v-model.number="form.value"
-                type="number"
-                required
-                min="1"
-                class="form-input"
-                placeholder="Введите значение"
-            />
+            <label>Значение:</label>
+            <input v-model.number="form.value" type="number" min="1" max="100" required/>
           </div>
 
           <div class="form-group">
-            <label for="color">Цвет</label>
-            <ColorPicker
-                v-model:pureColor="form.color"
-                format="hex"
-                pickerType="chrome"
-                :disableHistory="true"
-                :disableAlpha="true"
-            />
+            <label>Цвет:</label>
+            <ColorPicker v-model:pureColor="form.color" format="hex" pickerType="chrome" :disableHistory="true"
+                         :disableAlpha="true"/>
             <p>Выбранный цвет: {{ form.color }}</p>
           </div>
 
-          <button type="submit" class="submit-btn">
-            {{ editingIndex === null ? 'Добавить' : 'Обновить' }}
-          </button>
-          <button
-              v-if="editingIndex !== null"
-              type="button"
-              @click="cancelEdit"
-              class="cancel-btn"
-          >
-            Отмена
-          </button>
+          <div class="form-actions">
+            <button type="button" @click="closeModal" class="cancel-btn">Отмена</button>
+            <button type="submit" class="submit-btn">
+              {{ editingIndex === null ? 'Добавить' : 'Обновить' }}
+            </button>
+          </div>
         </form>
       </div>
     </div>
 
-    <div v-if="dataCount > 0" class="data-list">
-      <h2 class="list-title">Список данных</h2>
-      <ul>
-        <li v-for="(item, index) in pieData.labels" :key="index" class="data-item">
-          <div class="item-info">
-            <span class="item-color" :style="{ backgroundColor: pieData.datasets[0].backgroundColor[index] }"></span>
-            <span class="item-label">{{ item }}</span>
-            <span class="item-value">{{ pieData.datasets[0].data[index] }}</span>
-          </div>
-          <div class="item-actions">
-            <button @click="editItem(index)" class="edit-btn">✏️</button>
-            <button @click="removeItem(index)" class="remove-btn">🗑️</button>
-          </div>
-        </li>
-      </ul>
-    </div>
-
-    <div v-else class="empty-state">
+    <div v-if="dataCount === 0" class="empty-state">
       <p>Данные для диаграммы отсутствуют. Добавьте их через форму выше.</p>
     </div>
   </div>
-
-
 </template>
 
 <style>
+.pie-chart {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 50px 89px;
+}
+
 .page-title {
   text-align: center;
   margin-bottom: 30px;
@@ -314,42 +309,14 @@ const resetForm = () => {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-.form-container {
-  flex: 1;
-  min-width: 300px;
-  background: white;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.form-title {
-  margin-top: 0;
-  margin-bottom: 20px;
-  color: #333;
-}
-
-.data-form {
+.data-controls {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 20px;
 }
 
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.form-input {
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 16px;
-}
-
-.submit-btn {
-  padding: 10px 15px;
+.add-btn {
+  padding: 10px 20px;
   background-color: #4CAF50;
   color: white;
   border: none;
@@ -359,24 +326,8 @@ const resetForm = () => {
   transition: background-color 0.3s;
 }
 
-.submit-btn:hover {
+.add-btn:hover {
   background-color: #45a049;
-}
-
-.cancel-btn {
-  padding: 10px 15px;
-  background-color: #f44336;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 16px;
-  transition: background-color 0.3s;
-  margin-top: 10px;
-}
-
-.cancel-btn:hover {
-  background-color: #d32f2f;
 }
 
 .data-list {
@@ -449,6 +400,95 @@ const resetForm = () => {
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   color: #666;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-content h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.data-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.form-group label {
+  font-weight: 500;
+  color: #555;
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"] {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.cancel-btn,
+.submit-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.cancel-btn {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.cancel-btn:hover {
+  background-color: #e0e0e0;
+}
+
+.submit-btn {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.submit-btn:hover {
+  background-color: #45a049;
 }
 
 @media (max-width: 768px) {
